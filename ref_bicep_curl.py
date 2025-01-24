@@ -1,30 +1,56 @@
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+import cv2
+import mediapipe as mp
+import numpy as np
 
+def calculate_angle(a, b, c):
+    a = np.array(a)  # First point
+    b = np.array(b)  # Midpoint
+    c = np.array(c)  # Endpoint
+    
+    radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
+    angle = np.abs(radians * 180.0 / np.pi)
+    
+    if angle > 180.0:
+        angle = 360 - angle
+        
+    return angle
 
 reference_angles = []
-ref_cap = cv2.VideoCapture('bicep_curl.mp4')
 
-while ref_cap.isOpened():
-    ret, ref_frame = ref_cap.read()
-    if not ret:
-        break
+def ref_bicep_curl(video_path='bicep_curl.mp4'):
+    # Initialize MediaPipe pose
+    mp_pose = mp.solutions.pose
+    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-    ref_image = cv2.cvtColor(ref_frame, cv2.COLOR_BGR2RGB)
-    ref_image.flags.writeable = False
-    ref_results = pose.process(ref_image)
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"Error: Unable to open video file '{video_path}'")
+        return
 
-    if ref_results.pose_landmarks:
-        ref_landmarks = ref_results.pose_landmarks.landmark
+    while cap.isOpened():
+        success, frame = cap.read()
+        if not success:
+            break
 
-        shoulder = [ref_landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
-                    ref_landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
-        elbow = [ref_landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
-                 ref_landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
-        wrist = [ref_landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x,
-                 ref_landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image.flags.writeable = False
+        results = pose.process(image)
 
-        arm_angle = calculate_angle(shoulder, elbow, wrist)
-        reference_angles.append(arm_angle)
+        if results.pose_landmarks:
+            landmarks = results.pose_landmarks.landmark
 
-ref_cap.release()
+            shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
+                        landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
+            elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
+                     landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
+            wrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x,
+                     landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
+
+            # Calculate the angle
+            arm_angle = calculate_angle(shoulder, elbow, wrist)
+            reference_angles.append(arm_angle)
+
+    cap.release()
+    # Save reference angles for later use
+    np.save('reference_angles_bicep_curl.npy', reference_angles)
+    print(f"Reference angles saved to 'reference_angles_bicep_curl.npy'")
