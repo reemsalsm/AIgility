@@ -1,4 +1,4 @@
-bicep_curl new code import cv2
+import cv2
 import mediapipe as mp
 import numpy as np
 from ref_bicep_curl import calculate_angle, reference_angles
