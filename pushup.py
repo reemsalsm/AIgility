@@ -1,6 +1,34 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import time
+
+
+def give_feedback(reps):
+    if reps < 5:
+        print("Keep going! Try to complete more reps.")
+    elif reps < 10:
+        print("You're doing great, keep it up!")
+    else:
+        print("Excellent work! Keep pushing.")
+
+# Simulate counting pushups
+reps = 0
+start_time = time.time()
+
+while True:
+    # Your logic to detect pushup (e.g., using OpenCV or other methods)
+    # For now, just simulate with a manual increment for testing
+    reps += 1
+    give_feedback(reps)
+    
+    # Simulate waiting for the next pushup (replace this with actual detection logic)
+    time.sleep(2)
+    
+    # Stop after 20 reps (for demonstration purposes)
+    if reps >= 20:
+        break
+
 
 def pushup(video_path='pushup.mp4'):
     """Main function to track pushups with feedback."""
@@ -134,6 +162,8 @@ def pushup(video_path='pushup.mp4'):
             if right_arm_angle < 50 and left_arm_angle < 50 and stage == "down":
                 stage = "up"
                 counter += 1
+
+            
 
             # Display on video
             cv2.putText(image, f'Right Arm Angle: {int(right_arm_angle)}', (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
