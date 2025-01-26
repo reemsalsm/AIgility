@@ -17,6 +17,38 @@ def calculate_angle(a, b, c):
 
 reference_angles = []
 
+# pushup.py
+
+import time
+
+def give_feedback(reps):
+    if reps < 5:
+        print("Keep going! Try to complete more reps.")
+    elif reps < 10:
+        print("You're doing great, keep it up!")
+    else:
+        print("Excellent work! Keep pushing.")
+
+# Simulate counting pushups
+reps = 0
+start_time = time.time()
+
+while True:
+    # Your logic to detect pushup (e.g., using OpenCV or other methods)
+    # For now, just simulate with a manual increment for testing
+    reps += 1
+    give_feedback(reps)
+    
+    # Simulate waiting for the next pushup (replace this with actual detection logic)
+    time.sleep(2)
+    
+    # Stop after 20 reps (for demonstration purposes)
+    if reps >= 20:
+        break
+
+print(f"Total curls: {reps}")
+
+
 def ref_bicep_curl(video_path='bicep_curl.mp4'):
     """Extract reference angles from a video of correct bicep curl form."""
     global reference_angles
