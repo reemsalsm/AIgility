@@ -180,3 +180,7 @@ def pushup(video_path='pushup.mp4'):
 
     cap.release()
     cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+  
+    pushup()
