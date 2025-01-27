@@ -1,75 +1,80 @@
 import cv2
 import numpy as np
 import tensorflow as tf
-import os
 import subprocess
-import time
+import os
 
 # Load the trained model
-model_path = 'workout_model_20250127_123456.keras'  # Replace with your model path
-workout_model = tf.keras.models.load_model(model_path)
+model_path = 'workout_model_20250126_162435.keras'
+if not os.path.exists(model_path):
+    print(f"Model not found at {model_path}.")
+    exit(1)
 
-# Define class labels
+workout_model = tf.keras.models.load_model(model_path)
 class_labels = ['push up', 'squat', 'barbell biceps curl', 'plank']
 
-# Load the webcam
-cap = cv2.VideoCapture(0)
-
-# Set video feed size
-cap.set(3, 256)  # width
-cap.set(4, 256)  # height
-
-# Function to preprocess the image for the model
+# Preprocess image
 def preprocess_image(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB
-    image = cv2.resize(image, (256, 256))  # Resize to match input size
-    image = image / 255.0  # Normalize image
-    image = np.expand_dims(image, axis=0)  # Add batch dimension
-    return image
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.resize(image, (256, 256))
+    image = image / 255.0
+    return np.expand_dims(image, axis=0)
 
-# Function to predict the workout and redirect
-def predict_workout(frame):
-    # Preprocess the image
+# Predict workout
+def predict_workout(frame, cap):
     processed_image = preprocess_image(frame)
-    
-    # Predict using the model
     predictions = workout_model.predict(processed_image)
-    predicted_class = class_labels[np.argmax(predictions)]
-    print(f"Predicted: {predicted_class}")
+    print(f"Raw Predictions: {predictions}")
 
-    # Redirect to the appropriate Python file based on prediction
-    if predicted_class == 'push up':
-        subprocess.Popen(['python3', 'pushup.py'])
-    elif predicted_class == 'squat':
-        subprocess.Popen(['python3', 'squat.py'])
-    elif predicted_class == 'barbell biceps curl':
-        subprocess.Popen(['python3', 'bicep_curl.py'])
-    elif predicted_class == 'plank':
-        subprocess.Popen(['python3', 'plank.py'])
+    confidence = np.max(predictions)
+    if confidence > 0.8:  # Confidence threshold
+        predicted_class = class_labels[np.argmax(predictions)]
+        print(f"Predicted: {predicted_class} (Confidence: {confidence:.2f})")
 
-# Loop to capture frames from the webcam
+        # Script redirection
+        script_mapping = {
+            'push up': 'pushup.py',
+            'squat': 'squat.py',
+            'barbell biceps curl': 'bicep_curl.py',
+            'plank': 'plank.py',
+        }
+        script_to_run = script_mapping.get(predicted_class)
+        if script_to_run:
+            if os.path.exists(script_to_run):
+                # Release webcam and destroy all OpenCV windows
+                cap.release()
+                cv2.destroyAllWindows()
+                
+                try:
+                    subprocess.Popen(['python', script_to_run])
+                    print(f"Successfully launched {script_to_run}")
+                except Exception as e:
+                    print(f"Failed to launch {script_to_run}: {e}")
+            else:
+                print(f"Script {script_to_run} not found.")
+    else:
+        print(f"Uncertain prediction: {confidence:.2f}. Try again.")
+
+# Main loop
+cap = cv2.VideoCapture(0)
+cap.set(3, 256)
+cap.set(4, 256)
+
 while True:
     ret, frame = cap.read()
-    
     if not ret:
         print("Failed to grab frame.")
         break
-    
-    # Display the current frame
+
     cv2.imshow("Workout Classification", frame)
-
-
-    
-    # Classify workout on key press (you can set a specific key to trigger prediction)
     key = cv2.waitKey(1) & 0xFF
-    if key == ord('p'):  # Press 'p' to classify the current frame
-        predict_workout(frame)
 
-    # Exit condition: Press 'q' to quit
-    if key == ord('q'):
+    if key == ord('p'):  # Press 'p' to classify
+        predict_workout(frame, cap)
+        break  # Exit the main loop after classification and script launch
+
+    if key == ord('q'):  # Press 'q' to quit
         break
 
-# Release the webcam and close any OpenCV windows
 cap.release()
 cv2.destroyAllWindows()
-
