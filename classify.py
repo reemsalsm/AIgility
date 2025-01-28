@@ -11,7 +11,10 @@ if not os.path.exists(model_path):
     exit(1)
 
 workout_model = tf.keras.models.load_model(model_path)
-class_labels = ['push up', 'squat', 'barbell biceps curl', 'plank']
+
+# Dynamically fetch class labels from the model
+class_labels = workout_model.output_names
+print(f"Loaded class labels: {class_labels}")
 
 # Preprocess image
 def preprocess_image(image):
