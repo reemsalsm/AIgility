@@ -17,24 +17,16 @@ reps = 0
 start_time = time.time()
 
 while True:
-    # Your logic to detect pushup (e.g., using OpenCV or other methods)
-    # For now, just simulate with a manual increment for testing
     reps += 1
     give_feedback(reps)
-    
-    # Simulate waiting for the next pushup (replace this with actual detection logic)
     time.sleep(2)
     
-    # Stop after 20 reps (for demonstration purposes)
     if reps >= 20:
         break
 
-
 def pushup(video_path='pushup.mp4'):
-    """Main function to track pushups with feedback."""
     
     def calculate_angle(a, b, c):
-        """Calculate the angle between three points."""
         a = np.array(a)
         b = np.array(b)
         c = np.array(c)
