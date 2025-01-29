@@ -136,8 +136,4 @@ def plank():
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    # Uncomment to generate reference angles
-    # ref_squat('squat.mp4')
-
-    # Uncomment to start squat tracking
     plank()
