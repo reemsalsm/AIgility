@@ -33,20 +33,13 @@ reps = 0
 start_time = time.time()
 
 while True:
-    # Your logic to detect pushup (e.g., using OpenCV or other methods)
-    # For now, just simulate with a manual increment for testing
     reps += 1
     give_feedback(reps)
-    
-    # Simulate waiting for the next pushup (replace this with actual detection logic)
     time.sleep(2)
     
-    # Stop after 20 reps (for demonstration purposes)
     if reps >= 20:
         break
-
 print(f"total squats: {reps}")
-
 
 def ref_squat(video_path='squat.mp4'):
     mp_pose = mp.solutions.pose
