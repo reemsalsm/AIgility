@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 
 def calculate_angle(a, b, c):
+    """Calculate the angle between three points."""
     a = np.array(a)  # First point
     b = np.array(b)  # Midpoint
     c = np.array(c)  # Endpoint
@@ -14,81 +15,6 @@ def calculate_angle(a, b, c):
         angle = 360 - angle
 
     return angle
-
-reference_angles = []
-
-# pushup.py
-
-import time
-
-def give_feedback(reps):
-    if reps < 5:
-        print("Keep going! Try to complete more reps.")
-    elif reps < 10:
-        print("You're doing great, keep it up!")
-    else:
-        print("Excellent work! Keep pushing.")
-
-# Simulate counting pushups
-reps = 0
-start_time = time.time()
-
-while True:
-    # Your logic to detect pushup (e.g., using OpenCV or other methods)
-    # For now, just simulate with a manual increment for testing
-    reps += 1
-    give_feedback(reps)
-    
-    # Simulate waiting for the next pushup (replace this with actual detection logic)
-    time.sleep(2)
-    
-    # Stop after 20 reps (for demonstration purposes)
-    if reps >= 20:
-        break
-
-print(f"Total curls: {reps}")
-
-
-def ref_bicep_curl(video_path='bicep_curl.mp4'):
-    """Extract reference angles from a video of correct bicep curl form."""
-    global reference_angles
-
-    # Initialize MediaPipe pose
-    mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        print(f"Error: Unable to open video file '{video_path}'")
-        return
-
-    while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
-            break
-
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image.flags.writeable = False
-        results = pose.process(image)
-
-        if results.pose_landmarks:
-            landmarks = results.pose_landmarks.landmark
-
-            shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x,
-                        landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
-            elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x,
-                     landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
-            wrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x,
-                     landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
-
-            # Calculate the angle
-            arm_angle = calculate_angle(shoulder, elbow, wrist)
-            reference_angles.append(arm_angle)
-
-    cap.release()
-    # Save reference angles for later use
-    np.save('reference_angles_bicep_curl.npy', reference_angles)
-    print(f"Reference angles saved to 'reference_angles_bicep_curl.npy'")
 
 def bicep_curl():
     """Track bicep curl repetitions for both arms in real-time."""
@@ -150,17 +76,21 @@ def bicep_curl():
             right_arm_angle = calculate_angle(right_shoulder, right_elbow, right_wrist)
             left_arm_angle = calculate_angle(left_shoulder, left_elbow, left_wrist)
 
+            # Additional check: Ensure the elbow is close to the torso
+            right_elbow_torso_distance = abs(right_elbow[0] - right_shoulder[0])  # Horizontal distance
+            left_elbow_torso_distance = abs(left_elbow[0] - left_shoulder[0])  # Horizontal distance
+
             # Feedback and stage logic for the right arm
-            if right_arm_angle > 160:
+            if right_arm_angle > 150 and right_elbow_torso_distance < 0.1:  # Arm extended and elbow close to torso
                 stage_right = "down"
-            if right_arm_angle < 50 and stage_right == "down":
+            if right_arm_angle < 60 and stage_right == "down" and right_elbow_torso_distance < 0.1:  # Arm curled and elbow close to torso
                 stage_right = "up"
                 counter_right += 1
 
             # Feedback and stage logic for the left arm
-            if left_arm_angle > 160:
+            if left_arm_angle > 150 and left_elbow_torso_distance < 0.1:  # Arm extended and elbow close to torso
                 stage_left = "down"
-            if left_arm_angle < 50 and stage_left == "down":
+            if left_arm_angle < 60 and stage_left == "down" and left_elbow_torso_distance < 0.1:  # Arm curled and elbow close to torso
                 stage_left = "up"
                 counter_left += 1
 
@@ -180,10 +110,3 @@ def bicep_curl():
 
     cap.release()
     cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    # Uncomment the following line to generate reference angles from a video
-    # ref_bicep_curl("bicep_curl.mp4")
-
-    # Start tracking bicep curls
-    bicep_curl()
